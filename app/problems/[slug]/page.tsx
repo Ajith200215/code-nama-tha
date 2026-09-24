@@ -13,14 +13,42 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
     .eq('slug', slug)
     .single();
 
-  // If not found in DB, use a mock problem (for development without DB populated)
+  const MOCK_PROBLEMS = [
+    { slug: 'two-sum', title: 'Two Sum', difficulty: 'Easy', topics: ['Array', 'Hash Table'] },
+    { slug: 'valid-parentheses', title: 'Valid Parentheses', difficulty: 'Easy', topics: ['String', 'Stack'] },
+    { slug: 'merge-intervals', title: 'Merge Intervals', difficulty: 'Medium', topics: ['Array', 'Sorting'] },
+    { slug: 'longest-substring', title: 'Longest Substring Without Repeating', difficulty: 'Medium', topics: ['String', 'Sliding Window'] },
+    { slug: 'binary-search', title: 'Binary Search', difficulty: 'Easy', topics: ['Array', 'Binary Search'] },
+    { slug: 'climbing-stairs', title: 'Climbing Stairs', difficulty: 'Easy', topics: ['DP', 'Math'] },
+    { slug: 'word-break', title: 'Word Break', difficulty: 'Medium', topics: ['DP', 'String'] },
+    { slug: 'coin-change', title: 'Coin Change', difficulty: 'Medium', topics: ['DP', 'Array'] },
+    { slug: 'lru-cache', title: 'LRU Cache', difficulty: 'Medium', topics: ['Hash Table', 'Linked List'] },
+    { slug: 'trapping-rain-water', title: 'Trapping Rain Water', difficulty: 'Hard', topics: ['Array', 'Two Pointers'] },
+  ];
+
+  const mockProblem = MOCK_PROBLEMS.find(p => p.slug === slug);
+  
+  if (!problem && !mockProblem) {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center h-full text-[var(--d-muted)]">
+          <h1 className="text-2xl font-bold mb-2 text-[var(--d-ink)]">Problem Not Found</h1>
+          <p>The problem you are looking for does not exist.</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  // If not found in DB, use the matched mock problem
   const problemData = problem || {
     id: 'mock-uuid',
     slug: slug,
-    title: 'Two Sum',
-    description: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have **exactly one solution**, and you may not use the same element twice.\n\nYou can return the answer in any order.',
-    difficulty: 'Easy',
-    topics: ['Array', 'Hash Table'],
+    title: mockProblem!.title,
+    description: slug === 'two-sum' 
+      ? 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have **exactly one solution**, and you may not use the same element twice.\n\nYou can return the answer in any order.'
+      : `This is a placeholder description for **${mockProblem!.title}**. The database has not been fully seeded with this problem's content yet.`,
+    difficulty: mockProblem!.difficulty,
+    topics: mockProblem!.topics,
   };
 
   // Fetch test cases
@@ -55,19 +83,19 @@ if __name__ == '__main__':
     {
       level: 3,
       language: 'python',
-      template_code: 'def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        need = target - n\n        if need in seen:\n            return [seen[need], i] # <- your turn\n        seen[n] = i\n' + runnerCode,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        need = target - n\n        if need in seen:\n            return [seen[need], i] # <- your turn\n        seen[n] = i\n' + runnerCode : `# Mock L3 for ${slug}\n${runnerCode}`,
       hints: ['Fill in the missing line to return the correct indices.'],
     },
     {
       level: 2,
       language: 'python',
-      template_code: 'def two_sum(nums, target):\n    seen = {}\n    # Loop through nums\n    # Check if target - n is in seen\n    # Return indices\n' + runnerCode,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    # Loop through nums\n    # Check if target - n is in seen\n    # Return indices\n' + runnerCode : `# Mock L2 for ${slug}\n${runnerCode}`,
       hints: ['Use a hash map to keep track of numbers you have seen.'],
     },
     {
       level: 1,
       language: 'python',
-      template_code: 'def two_sum(nums, target):\n    # Write your code here\n    pass\n' + runnerCode,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    # Write your code here\n    pass\n' + runnerCode : `# Mock L1 for ${slug}\n${runnerCode}`,
       hints: ['A brute force solution is O(n^2). Can you do it in O(n) using a hash map?'],
     },
     {
