@@ -10,20 +10,53 @@ const ProblemSchema = z.object({
     input: z.string(),
     output: z.string(),
     explanation: z.string().optional(),
-  })),
-  constraints: z.array(z.string()),
+  })).default([]),
+  constraints: z.array(z.string()).default([]),
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
-  topics: z.array(z.string()),
+  topics: z.array(z.string()).default([]),
   reference_solution: z.string(),
   test_cases: z.array(z.object({
     input: z.string(),
     expected_output: z.string(),
-  })),
+  })).default([]),
 });
 
-const ProblemSetSchema = z.object({
-  problems: z.array(ProblemSchema),
-});
+function extractJSON(text: string): string {
+  // Strip markdown fences
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) return fence[1].trim();
+  // Extract first {...} block
+  const obj = text.match(/\{[\s\S]*\}/);
+  if (obj) return obj[0];
+  return text.trim();
+}
+
+async function generateOneProblem(groq: Groq, topics: string[], difficulty: string, idx: number, total: number) {
+  const prompt = `Generate a unique coding problem #${idx + 1} of ${total} for a learning platform.
+Topics: ${topics.join(', ')}
+Difficulty: ${difficulty}
+
+Respond with ONLY a JSON object — no markdown, no explanation, no extra text. Use exactly this shape:
+{"title":"Sum of Array","description":"Given array nums, return sum of all elements. Print the result.","examples":[{"input":"[1,2,3]","output":"6","explanation":"1+2+3=6"}],"constraints":["1<=n<=100","integers only"],"difficulty":"Easy","topics":["Array"],"reference_solution":"nums=list(map(int,input().split()))\\nprint(sum(nums))","test_cases":[{"input":"1 2 3","expected_output":"6"}]}
+
+Rules:
+- Python only. reference_solution reads from stdin, prints to stdout.
+- Keep description under 150 chars.
+- Max 2 examples, 2 test_cases, 2 constraints.
+- difficulty must be exactly "Easy", "Medium", or "Hard".`;
+
+  const completion = await groq.chat.completions.create({
+    messages: [{ role: 'user', content: prompt }],
+    model: 'openai/gpt-oss-20b',
+    max_tokens: 700,
+    temperature: 0.7,
+  });
+
+  const raw = completion.choices[0]?.message?.content || '{}';
+  const jsonStr = extractJSON(raw);
+  const parsed = JSON.parse(jsonStr);
+  return ProblemSchema.parse(parsed);
+}
 
 export async function POST(req: Request) {
   try {
@@ -31,12 +64,12 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { topics, difficulty, count = 3 } = await req.json();
+    const { topics, difficulty, count = 2 } = await req.json();
     if (!topics || !Array.isArray(topics) || topics.length === 0) {
       return NextResponse.json({ error: 'Please provide at least one topic' }, { status: 400 });
     }
 
-    // Check quota (5 generations per day)
+    // Check daily quota
     const today = new Date().toISOString().split('T')[0];
     const { data: usage } = await supabase
       .from('ai_usage')
@@ -48,80 +81,34 @@ export async function POST(req: Request) {
     const currentCount = usage?.calls_count || 0;
     const DAILY_LIMIT = 5;
     if (currentCount >= DAILY_LIMIT) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: `Daily limit reached (${DAILY_LIMIT} generations/day). Resets at midnight.`,
         quota: { used: currentCount, limit: DAILY_LIMIT }
       }, { status: 429 });
     }
 
-    const difficultyRange = difficulty === 'mixed'
-      ? 'a mix of Easy, Medium, and Hard'
-      : difficulty;
-
-    const prompt = `You are a coding problem generator for a learning platform. Generate exactly ${count} unique coding problems.
-
-Topics: ${topics.join(', ')}
-Difficulty: ${difficultyRange}
-
-Return ONLY a valid JSON object matching this exact structure (no markdown, no explanation):
-{
-  "problems": [
-    {
-      "title": "Problem Title",
-      "description": "Full problem description with clear requirements",
-      "examples": [
-        { "input": "example input", "output": "expected output", "explanation": "why" }
-      ],
-      "constraints": ["1 <= n <= 10^4", "array contains integers"],
-      "difficulty": "Easy|Medium|Hard",
-      "topics": ["Array", "Hash Map"],
-      "reference_solution": "def solve(...):\\n    # complete working Python solution",
-      "test_cases": [
-        { "input": "exact stdin input", "expected_output": "exact stdout output" }
-      ]
-    }
-  ]
-}
-
-Rules:
-- Each problem must be solvable in Python.
-- reference_solution must be a complete, working Python function + a call to print the result.
-- test_cases must match what the reference_solution prints to stdout.
-- Generate ${count} problems ordered from easier to harder.
-- Be creative and vary the problem styles.`;
-
+    const difficultyLabel = difficulty === 'mixed' ? 'any (vary between Easy, Medium, Hard)' : difficulty;
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    
-    let raw = '';
-    try {
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'openai/gpt-oss-20b',
-        response_format: { type: 'json_object' },
-      });
-      raw = completion.choices[0]?.message?.content || '{}';
-    } catch (err: unknown) {
-      console.error('Groq generation error:', err);
-      return NextResponse.json({ error: 'AI generation failed. Please try again.' }, { status: 503 });
+
+    // Generate one problem at a time to avoid truncation
+    const problems = [];
+    const safeCount = Math.min(count, 5);
+
+    for (let i = 0; i < safeCount; i++) {
+      try {
+        const problem = await generateOneProblem(groq, topics, difficultyLabel, i, safeCount);
+        problems.push(problem);
+      } catch (err: unknown) {
+        console.error(`Problem ${i + 1} generation/parse failed:`, err);
+        // Skip failed problems instead of crashing
+      }
     }
 
-    // Parse and validate
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return NextResponse.json({ error: 'AI returned invalid JSON. Please try again.' }, { status: 500 });
+    if (problems.length === 0) {
+      return NextResponse.json({ error: 'AI failed to generate any valid problems. Please try again.' }, { status: 500 });
     }
 
-    const validated = ProblemSetSchema.safeParse(parsed);
-    if (!validated.success) {
-      console.error('Schema validation failed:', validated.error);
-      return NextResponse.json({ error: 'Generated problems did not match expected format.' }, { status: 500 });
-    }
-
-    const { problems } = validated.data;
-
-    // Save to custom_problems table
+    // Save valid problems to DB
     const saved = [];
     for (const p of problems) {
       const { data, error } = await supabase.from('custom_problems').insert({
@@ -138,12 +125,10 @@ Rules:
         reference_solution: p.reference_solution,
       }).select().single();
 
-      if (!error && data) {
-        saved.push({ ...p, id: data.id });
-      }
+      if (!error && data) saved.push({ ...p, id: data.id });
     }
 
-    // Update AI quota
+    // Update quota
     await supabase.from('ai_usage').upsert({
       user_id: user.id,
       date: today,
@@ -151,7 +136,7 @@ Rules:
     }, { onConflict: 'user_id,date' });
 
     return NextResponse.json({
-      problems: saved,
+      problems: saved.length > 0 ? saved : problems,
       quota: { used: currentCount + 1, limit: DAILY_LIMIT },
     });
 
