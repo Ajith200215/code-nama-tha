@@ -28,7 +28,7 @@ function extractJSON(text: string): string {
   return text.trim();
 }
 
-async function generateOneProblem(topics: string[], difficulty: string, idx: number, total: number, providedApiKey?: string, provider: 'Gemini' | 'Groq' = 'Gemini') {
+async function generateOneProblem(topics: string[], difficulty: string, idx: number, total: number) {
   const prompt = `Generate a unique coding problem #${idx + 1} of ${total} for a learning platform.
 Topics: ${topics.join(', ')}
 Difficulty: ${difficulty}
@@ -42,27 +42,7 @@ Rules:
 - Max 2 examples, 2 test_cases, 2 constraints.
 - difficulty must be exactly "Easy", "Medium", or "Hard".`;
 
-  if (provider === 'Groq') {
-    const apiKey = providedApiKey || process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("No Groq API key available");
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 800
-      })
-    });
-    if (!groqRes.ok) throw new Error(`Groq Error: ${groqRes.status} ${await groqRes.text()}`);
-    const groqData = await groqRes.json();
-    const raw = groqData.choices?.[0]?.message?.content || '{}';
-    return ProblemSchema.parse(JSON.parse(extractJSON(raw)));
-  }
-
-  // Default to Gemini
-  const apiKey = providedApiKey || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("No Gemini API key available");
 
   const models = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash-preview', 'gemini-2.0-flash'];
@@ -108,7 +88,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { topics, difficulty, count = 2, apiKey, provider = 'Gemini' } = await req.json();
+    const { topics, difficulty, count = 2 } = await req.json();
     if (!topics || !Array.isArray(topics) || topics.length === 0) {
       return NextResponse.json({ error: 'Please provide at least one topic' }, { status: 400 });
     }
@@ -136,7 +116,7 @@ export async function POST(req: Request) {
 
     for (let i = 0; i < safeCount; i++) {
       try {
-        const problem = await generateOneProblem(topics, difficultyLabel, i, safeCount, apiKey, provider);
+        const problem = await generateOneProblem(topics, difficultyLabel, i, safeCount);
         problems.push(problem);
       } catch (err: unknown) {
         console.error(`Problem ${i + 1} generation/parse failed:`, err instanceof Error ? err.message : err);
