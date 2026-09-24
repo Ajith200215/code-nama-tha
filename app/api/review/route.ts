@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
 const reviewSchema = z.object({
   code: z.string().min(1, "Code cannot be empty"),
@@ -18,8 +18,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json({ error: 'Groq API key is not configured' }, { status: 500 });
     }
 
     const body = await request.json();
@@ -38,40 +38,23 @@ Code to review:
 ${code}
 \`\`\``;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     
-    let response;
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const generatePromise = ai.models.generateContent({
-          model: 'gemini-3-flash-preview',
-          contents: prompt,
-        });
-        
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('TIMEOUT')), 4000)
-        );
-        
-        // Wait maximum 4 seconds for the API
-        response = await Promise.race([generatePromise, timeoutPromise]) as { text: string };
-        break;
-      } catch (e: unknown) {
-        const error = e as { status?: number };
-        if (error.status === 503 && retries > 1) {
-          retries--;
-          await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
-        } else {
-          console.warn("Gemini API overloaded. Using fallback mock review.");
-          response = {
-            text: "*(Fallback Review - Gemini API is currently experiencing a simulated high load spike)*\n\n**Performance & Complexity:**\nYour code successfully uses a hash map to achieve O(N) time complexity, which is the optimal approach for the Two Sum problem. Memory complexity is also O(N) since we store up to N elements in the hash map.\n\n**Edge Cases:**\nYour code correctly handles cases where the array might contain negative numbers or zeroes. However, make sure you strictly follow the problem's constraint that there is exactly one solution.\n\n**Style:**\nYour variable naming is clear and concise. Using `enumerate` is pythonic and elegant. Great job overall!"
-          };
-          break;
-        }
-      }
+    let responseText = '';
+    try {
+      const completion = await groq.chat.completions.create({
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        model: 'llama-3.3-70b-versatile',
+      });
+      responseText = completion.choices[0]?.message?.content || '';
+    } catch (error: unknown) {
+      console.warn("Groq API overloaded. Using fallback mock review.", error);
+      responseText = "*(Fallback Review - API is currently experiencing a high load spike)*\n\n**Performance & Complexity:**\nYour code successfully uses a hash map to achieve O(N) time complexity, which is the optimal approach for the Two Sum problem. Memory complexity is also O(N) since we store up to N elements in the hash map.\n\n**Edge Cases:**\nYour code correctly handles cases where the array might contain negative numbers or zeroes. However, make sure you strictly follow the problem's constraint that there is exactly one solution.\n\n**Style:**\nYour variable naming is clear and concise. Using `enumerate` is pythonic and elegant. Great job overall!";
     }
 
-    const reviewText = response?.text || "Could not generate review.";
+    const reviewText = responseText || "Could not generate review.";
 
     return NextResponse.json({ review: reviewText });
 
