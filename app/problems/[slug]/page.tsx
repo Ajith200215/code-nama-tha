@@ -69,7 +69,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
     .select('*')
     .eq('problem_id', problemData.id);
 
-  const runnerCode = `
+  const twoSumRunner = `
 import sys, json
 if __name__ == '__main__':
     lines = sys.stdin.read().strip().split('\\n')
@@ -79,29 +79,36 @@ if __name__ == '__main__':
         print(json.dumps(two_sum(nums, target)))
 `;
 
+  const genericRunner = `
+import sys
+if __name__ == '__main__':
+    # TODO: Read input from sys.stdin and print output
+    pass
+`;
+
   const levelsData = levels?.length ? levels : [
     {
       level: 3,
       language: 'python',
-      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        need = target - n\n        if need in seen:\n            return [seen[need], i] # <- your turn\n        seen[n] = i\n' + runnerCode : `# Mock L3 for ${slug}\n${runnerCode}`,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        need = target - n\n        if need in seen:\n            return [seen[need], i] # <- your turn\n        seen[n] = i\n' + twoSumRunner : `# Mock L3 for ${slug}\n${genericRunner}`,
       hints: ['Fill in the missing line to return the correct indices.'],
     },
     {
       level: 2,
       language: 'python',
-      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    # Loop through nums\n    # Check if target - n is in seen\n    # Return indices\n' + runnerCode : `# Mock L2 for ${slug}\n${runnerCode}`,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    seen = {}\n    # Loop through nums\n    # Check if target - n is in seen\n    # Return indices\n' + twoSumRunner : `# Mock L2 for ${slug}\n${genericRunner}`,
       hints: ['Use a hash map to keep track of numbers you have seen.'],
     },
     {
       level: 1,
       language: 'python',
-      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    # Write your code here\n    pass\n' + runnerCode : `# Mock L1 for ${slug}\n${runnerCode}`,
+      template_code: slug === 'two-sum' ? 'def two_sum(nums, target):\n    # Write your code here\n    pass\n' + twoSumRunner : `# Mock L1 for ${slug}\n${genericRunner}`,
       hints: ['A brute force solution is O(n^2). Can you do it in O(n) using a hash map?'],
     },
     {
       level: 0,
       language: 'python',
-      template_code: runnerCode,
+      template_code: slug === 'two-sum' ? twoSumRunner : genericRunner,
       hints: [],
     }
   ];
