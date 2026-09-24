@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import ProblemWorkspace from '@/components/problem-workspace';
+import Shell from '@/components/shell';
 
 export default async function ProblemPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -78,12 +79,12 @@ if __name__ == '__main__':
   ];
 
   return (
-    <div className="h-dvh flex flex-col bg-[var(--bg)] text-[var(--text)] overflow-hidden">
+    <Shell>
       <ProblemWorkspace 
         problem={problemData} 
         testCases={testCasesData} 
         levels={levelsData} 
       />
-    </div>
+    </Shell>
   );
 }
