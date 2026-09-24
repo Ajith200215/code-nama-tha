@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
@@ -22,16 +21,14 @@ const ProblemSchema = z.object({
 });
 
 function extractJSON(text: string): string {
-  // Strip markdown fences
   const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) return fence[1].trim();
-  // Extract first {...} block
   const obj = text.match(/\{[\s\S]*\}/);
   if (obj) return obj[0];
   return text.trim();
 }
 
-async function generateOneProblem(groq: Groq, topics: string[], difficulty: string, idx: number, total: number) {
+async function generateOneProblem(topics: string[], difficulty: string, idx: number, total: number) {
   const prompt = `Generate a unique coding problem #${idx + 1} of ${total} for a learning platform.
 Topics: ${topics.join(', ')}
 Difficulty: ${difficulty}
@@ -45,14 +42,29 @@ Rules:
 - Max 2 examples, 2 test_cases, 2 constraints.
 - difficulty must be exactly "Easy", "Medium", or "Hard".`;
 
-  const completion = await groq.chat.completions.create({
-    messages: [{ role: 'user', content: prompt }],
-    model: 'openai/gpt-oss-20b',
-    max_tokens: 700,
-    temperature: 0.7,
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is missing");
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.7
+      }
+    })
   });
 
-  const raw = completion.choices[0]?.message?.content || '{}';
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Gemini API Error: ${res.status} ${errorText}`);
+  }
+
+  const data = await res.json();
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  
   const jsonStr = extractJSON(raw);
   const parsed = JSON.parse(jsonStr);
   return ProblemSchema.parse(parsed);
@@ -69,7 +81,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Please provide at least one topic' }, { status: 400 });
     }
 
-    // Check daily quota
     const today = new Date().toISOString().split('T')[0];
     const { data: usage } = await supabase
       .from('ai_usage')
@@ -88,27 +99,22 @@ export async function POST(req: Request) {
     }
 
     const difficultyLabel = difficulty === 'mixed' ? 'any (vary between Easy, Medium, Hard)' : difficulty;
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-    // Generate one problem at a time to avoid truncation
     const problems = [];
     const safeCount = Math.min(count, 5);
 
     for (let i = 0; i < safeCount; i++) {
       try {
-        const problem = await generateOneProblem(groq, topics, difficultyLabel, i, safeCount);
+        const problem = await generateOneProblem(topics, difficultyLabel, i, safeCount);
         problems.push(problem);
       } catch (err: unknown) {
-        console.error(`Problem ${i + 1} generation/parse failed:`, err);
-        // Skip failed problems instead of crashing
+        console.error(`Problem ${i + 1} generation/parse failed:`, err instanceof Error ? err.message : err);
       }
     }
 
     if (problems.length === 0) {
-      return NextResponse.json({ error: 'AI failed to generate any valid problems. Please try again.' }, { status: 500 });
+      return NextResponse.json({ error: 'AI generation failed due to high load. Please try again.' }, { status: 503 });
     }
 
-    // Save valid problems to DB
     const saved = [];
     for (const p of problems) {
       const { data, error } = await supabase.from('custom_problems').insert({
@@ -128,7 +134,6 @@ export async function POST(req: Request) {
       if (!error && data) saved.push({ ...p, id: data.id });
     }
 
-    // Update quota
     await supabase.from('ai_usage').upsert({
       user_id: user.id,
       date: today,
