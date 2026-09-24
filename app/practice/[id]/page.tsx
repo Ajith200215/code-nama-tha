@@ -78,19 +78,42 @@ if __name__ == '__main__':
     {
       level: 2,
       language: 'python',
-      template_code: template_code,
+      template_code: `# Read from stdin and print to stdout
+import sys
+
+def solve():
+    # Tip: Use sys.stdin.read().split() for easy parsing
+    input_data = sys.stdin.read().split()
+    if not input_data:
+        return
+    
+    # TODO: Process input and print the result
+    pass
+
+if __name__ == '__main__':
+    solve()
+`,
       hints: ['Look closely at the examples to understand how edge cases are formatted.'],
     },
     {
       level: 1,
       language: 'python',
-      template_code: template_code,
+      template_code: `# Read from stdin and print to stdout
+import sys
+
+def solve():
+    # Write your optimized algorithm here
+    pass
+
+if __name__ == '__main__':
+    solve()
+`,
       hints: ['Consider a more optimal algorithm. Can you do it in fewer passes?'],
     },
     {
       level: 0,
       language: 'python',
-      template_code: problem.reference_solution || template_code,
+      template_code: parsedDesc.reference_solution || `# Solution not available for this custom problem.`,
       hints: [],
     }
   ];
