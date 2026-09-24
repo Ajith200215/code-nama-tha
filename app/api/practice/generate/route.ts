@@ -45,29 +45,41 @@ Rules:
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is missing");
 
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.7
-      }
-    })
-  });
+  const models = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash-preview', 'gemini-2.0-flash'];
+  let lastError = null;
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Gemini API Error: ${res.status} ${errorText}`);
+  for (const model of models) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.7
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Gemini API Error (${model}): ${res.status} ${errorText}`);
+      }
+
+      const data = await res.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      
+      const jsonStr = extractJSON(raw);
+      const parsed = JSON.parse(jsonStr);
+      return ProblemSchema.parse(parsed);
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${model} failed, trying next...`, (err as Error).message);
+    }
   }
 
-  const data = await res.json();
-  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-  
-  const jsonStr = extractJSON(raw);
-  const parsed = JSON.parse(jsonStr);
-  return ProblemSchema.parse(parsed);
+  throw lastError;
 }
 
 export async function POST(req: Request) {
