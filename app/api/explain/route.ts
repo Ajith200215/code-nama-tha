@@ -30,10 +30,17 @@ export async function POST(req: Request) {
     let retries = 3;
     while (retries > 0) {
       try {
-        response = await ai.models.generateContent({
+        const generatePromise = ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: systemPrompt + '\n\nCODE TO EXPLAIN:\n' + code,
         });
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('TIMEOUT')), 4000)
+        );
+        
+        // Wait maximum 4 seconds for the API
+        response = await Promise.race([generatePromise, timeoutPromise]) as { text: string };
         break;
       } catch (e: unknown) {
         const error = e as { status?: number };
