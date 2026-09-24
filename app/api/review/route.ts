@@ -49,8 +49,9 @@ ${code}
           contents: prompt,
         });
         break;
-      } catch (e: any) {
-        if (e.status === 503 && retries > 1) {
+      } catch (e: unknown) {
+        const error = e as { status?: number };
+        if (error.status === 503 && retries > 1) {
           retries--;
           await new Promise(r => setTimeout(r, 2000)); // wait 2s before retry
         } else {

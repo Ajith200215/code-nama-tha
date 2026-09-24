@@ -17,8 +17,8 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any[] | null>(null);
 
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewText, setReviewText] = useState<string | null>(null);
+  const [isReviewing] = useState(false);
+  const [reviewText] = useState<string | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   const handleLevelChange = (lvl: number) => {
@@ -56,30 +56,7 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
   };
 
   const getReview = async () => {
-    setIsReviewing(true);
-    setShowReviewModal(true);
-    setReviewText(null);
-    try {
-      const res = await fetch('/api/review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code,
-          language,
-          problem_title: problem.title,
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setReviewText(data.review);
-      } else {
-        setReviewText("Error: " + (data.error || "Failed to get review."));
-      }
-    } catch (e) {
-      console.error(e);
-      setReviewText("Failed to connect to review engine.");
-    }
-    setIsReviewing(false);
+    alert('AI Code Review is temporarily locked. We will solve this later!');
   };
 
   return (
@@ -158,11 +135,11 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
           <div className="flex items-center gap-2">
             <button 
               onClick={getReview}
-              disabled={isReviewing}
-              className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] px-4 py-1.5 rounded-[6px] font-mono text-[13px] font-medium transition-all disabled:opacity-50"
+              className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-muted)] px-4 py-1.5 rounded-[6px] font-mono text-[13px] font-medium transition-all opacity-50 cursor-not-allowed"
+              title="Temporarily locked"
             >
-              <Sparkles size={14} className="text-[var(--accent)]" />
-              Get AI Review
+              <Sparkles size={14} />
+              Get AI Review (Locked)
             </button>
             <button 
               onClick={runCode}

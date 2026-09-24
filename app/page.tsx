@@ -20,7 +20,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="relative min-h-dvh bg-[var(--bg)] text-[var(--text)] overflow-hidden selection:bg-[var(--accent)] selection:text-black">
+    <main className="relative min-h-dvh bg-[var(--bg)] text-[var(--text)] overflow-x-hidden selection:bg-[var(--accent)] selection:text-black">
       
       {/* 1. Aurora Background Layer (z-0) */}
       <AuroraBars
@@ -270,6 +270,112 @@ export default function LandingPage() {
           </div>
 
         </div>
+
+        {/* Section 11.1: Levels */}
+        <div className="py-24 border-t border-[var(--border)] relative z-20">
+          <h2 className="text-[2rem] font-sans mb-12">The Four Levels of Mastery</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[ 
+              { lvl: 3, title: "Guided", pct: 90, desc: "Fill in the missing line. Perfect for getting unstuck." },
+              { lvl: 2, title: "Half Code", pct: 45, desc: "Structure is provided. You write the logic." },
+              { lvl: 1, title: "Hints Only", pct: 10, desc: "A blank slate with gentle nudges in the right direction." },
+              { lvl: 0, title: "Blank Canvas", pct: 0, desc: "You against the machine. No help, just tests." },
+            ].map((l) => (
+              <div key={l.lvl} className="bg-[var(--surface)] border border-[var(--border)] rounded-[8px] p-6 flex flex-col">
+                <div className="font-mono text-[var(--accent)] mb-2">Level {l.lvl}</div>
+                <div className="text-xl font-sans mb-4">{l.title}</div>
+                <div className="h-1 w-full bg-[var(--surface-2)] rounded-full mb-4 overflow-hidden border border-[var(--border)]">
+                   <motion.div 
+                     initial={{ width: 0 }} 
+                     whileInView={{ width: `${l.pct}%` }} 
+                     viewport={{ once: true }}
+                     className="h-full bg-[var(--accent)]" 
+                     transition={{ duration: 1, delay: 0.2 }}
+                   />
+                </div>
+                <p className="text-[var(--text-muted)] text-sm">{l.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section 11.2: Rooms */}
+        <div className="py-24 border-t border-[var(--border)] relative z-20 flex flex-col md:flex-row items-center justify-between gap-12">
+          <div className="w-full md:w-1/2">
+            <h2 className="text-[2rem] font-sans mb-6">Race Your Friends</h2>
+            <p className="text-[var(--text-muted)] text-[17px] leading-[1.6] mb-8 max-w-[40ch]">
+              Generate a unique room link, invite your peers, and compete in real-time. Leaderboards update instantly as you pass test cases.
+            </p>
+            <button className="bg-[var(--surface-2)] border border-[var(--border)] font-mono text-[14px] px-6 py-3 rounded-[6px] hover:border-[var(--accent)] transition-colors">
+              Create a Room
+            </button>
+          </div>
+          <div className="w-full md:w-1/2 flex justify-end">
+            <div className="w-full max-w-[400px] bg-[var(--surface)] border border-[var(--border)] rounded-[8px] p-6 shadow-[0_0_40px_var(--accent-glow)]">
+              <div className="font-mono text-[14px] mb-6 flex justify-between">
+                <span>Room: <span className="text-[var(--accent)]">winter-bash</span></span>
+                <span className="text-[var(--text-muted)]">3/5 Players</span>
+              </div>
+              <div className="space-y-4">
+                {[ 
+                  { name: "alice_dev", time: "05:12", status: "Passed", icon: "bg-[var(--success)]" },
+                  { name: "bob_codes", time: "06:45", status: "Passed", icon: "bg-[var(--success)]" },
+                  { name: "you", time: "--:--", status: "In progress", icon: "bg-[var(--warn)]" },
+                ].map((p, i) => (
+                  <div key={i} className="flex justify-between items-center bg-[var(--surface-2)] p-3 rounded-[6px]">
+                    <span className="font-mono text-[13px]">{i+1}. {p.name}</span>
+                    <div className="flex items-center gap-4 font-mono text-[12px]">
+                      <div className="flex items-center gap-1.5">
+                         <div className={`w-2 h-2 rounded-full ${p.icon}`} />
+                         <span className="text-[var(--text-muted)]">{p.status}</span>
+                      </div>
+                      <span>{p.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 11.3: Explain */}
+        <div className="py-24 border-t border-[var(--border)] relative z-20">
+          <h2 className="text-[2rem] font-sans mb-12 text-center">Understand Every Line</h2>
+          <div className="flex flex-col md:flex-row gap-8 items-stretch">
+            <div className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] p-6 font-mono text-[13px] flex flex-col justify-center">
+              <div className="text-[var(--text-muted)] mb-4"># Code Snippet</div>
+              <div><span className="text-[var(--accent)]">if</span> need <span className="text-[var(--accent)]">in</span> seen:</div>
+              <div className="pl-4"><span className="text-[var(--accent)]">return</span> [seen[need], i]</div>
+            </div>
+            <div className="flex items-center justify-center text-[var(--accent)] text-xl font-bold font-mono">
+              →
+            </div>
+            <div className="flex-1 bg-[var(--surface)] border border-[var(--accent)] rounded-[8px] p-6 font-mono text-[13px] shadow-[0_0_30px_var(--accent-glow)] flex flex-col justify-center">
+              <div className="text-[var(--accent)] mb-4"># AI Explanation</div>
+              <p className="text-[var(--text)] mb-2">Check if the complement (`target - current_number`) exists in our hash map.</p>
+              <p className="text-[var(--text)]">If it does, we found the pair! Return the stored index and the current index.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 11.4: Footer */}
+        <footer className="py-12 border-t border-[var(--border)] relative z-20 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full border border-[var(--border)] flex items-center justify-center bg-[var(--surface)]">
+              <div className="w-3 h-3 rounded-full bg-[var(--text)]" />
+            </div>
+            <span className="font-mono font-semibold text-sm">{PLATFORM_NAME}¬</span>
+          </div>
+          <div className="flex gap-8 font-mono text-[12px] text-[var(--text-muted)]">
+            <a href="#" className="hover:text-[var(--accent)] transition-colors">Twitter</a>
+            <a href="#" className="hover:text-[var(--accent)] transition-colors">GitHub</a>
+            <a href="#" className="hover:text-[var(--accent)] transition-colors">Terms</a>
+          </div>
+          <div className="font-mono text-[12px] text-[var(--text-muted)]">
+            © 2026 {PLATFORM_NAME}. Solve it your way.
+          </div>
+        </footer>
+
       </div>
     </main>
   );
