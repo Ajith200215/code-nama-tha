@@ -57,6 +57,7 @@ export default function PracticePage() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState<'Gemini' | 'Groq'>('Gemini');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard' | 'mixed'>('mixed');
   const [count, setCount] = useState(3);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -105,7 +106,7 @@ export default function PracticePage() {
       const res = await fetch('/api/practice/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topics: selectedTopics, difficulty, count, apiKey: apiKey.trim() || undefined }),
+        body: JSON.stringify({ topics: selectedTopics, difficulty, count, apiKey: apiKey.trim() || undefined, provider }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -215,13 +216,26 @@ export default function PracticePage() {
 
                 <div className="mb-4">
                   <p className="text-[12px] font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--d-muted)' }}>
-                    CUSTOM API KEY <span className="text-[10px] bg-[var(--d-lime-soft)] text-[var(--d-ink)] px-2 py-0.5 rounded-full">Optional</span>
+                    AI PROVIDER & CUSTOM KEY <span className="text-[10px] bg-[var(--d-lime-soft)] text-[var(--d-ink)] px-2 py-0.5 rounded-full">Optional</span>
                   </p>
+                  
+                  <div className="flex gap-2 mb-2">
+                    {(['Gemini', 'Groq'] as const).map(p => (
+                      <button key={p} onClick={() => setProvider(p)}
+                        className="flex-1 py-1.5 rounded-[10px] text-[12px] font-semibold transition-all"
+                        style={provider === p
+                          ? { background: 'var(--d-ink)', color: 'var(--d-panel)' }
+                          : { background: 'var(--d-card)', border: '1px solid var(--d-line)', color: 'var(--d-muted)' }}>
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+
                   <input
                     type="password"
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
-                    placeholder="Enter your Gemini API Key..."
+                    placeholder={`Enter your ${provider} API Key...`}
                     className="w-full px-4 py-2.5 rounded-full text-[13px] outline-none mb-1"
                     style={{ background: 'var(--d-card)', border: '1.5px solid var(--d-line)', color: 'var(--d-ink)' }}
                   />
