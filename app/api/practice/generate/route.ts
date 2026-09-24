@@ -124,7 +124,23 @@ export async function POST(req: Request) {
     }
 
     if (problems.length === 0) {
-      return NextResponse.json({ error: 'AI generation failed due to high load. Please try again.' }, { status: 503 });
+      // Fallback: If all APIs fail (due to rate limits, invalid keys, etc.), provide a mock problem so the UI doesn't break
+      console.warn('All AI generations failed. Falling back to mock problem.');
+      problems.push({
+        title: "Find the Maximum Element",
+        description: "Given an array of integers, write a function to find and print the maximum element in the array.",
+        examples: [
+          { input: "1 5 3 9 2", output: "9", explanation: "9 is the largest number in the array." }
+        ],
+        constraints: ["1 <= array.length <= 100", "array elements are integers"],
+        difficulty: difficultyLabel.includes('Hard') ? 'Hard' : (difficultyLabel.includes('Medium') ? 'Medium' : 'Easy'),
+        topics: topics.length > 0 ? topics : ["Array", "Math"],
+        reference_solution: "nums = list(map(int, input().split()))\nprint(max(nums))",
+        test_cases: [
+          { input: "1 5 3 9 2", expected_output: "9" },
+          { input: "-5 -1 -10", expected_output: "-1" }
+        ]
+      });
     }
 
     const saved = [];
