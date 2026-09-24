@@ -1,46 +1,46 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-border: var(--border);
-  --color-text: var(--text);
-  --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-glow: var(--accent-glow);
-  --color-success: var(--success);
-  --color-warn: var(--warn);
-  --color-danger: var(--danger);
-  
-  --font-sans: var(--font-inter-tight);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 @layer base {
   :root {
-    --bg: #000000;
-    --surface: #120a0f;
-    --surface-2: #1a0e15;
-    --border: #ffffff1f;
-    --text: #ffffff;
-    --text-muted: #ffffff8c;
-    --accent: #ff5aa6;
-    --accent-strong: #ff2d78;
-    --accent-soft: #ff9acb;
-    --accent-glow: #ff2d7833;
-    --success: #5cf2b0;
-    --warn: #ffb86b;
-    --danger: #ff5c5c;
+    --d-page: #C8CAC2;
+    --d-panel: #FBFBF3;
+    --d-card: #FFFFFF;
+    --d-ink: #1B1B1B;
+    --d-muted: #8A8C84;
+    --d-line: #ECECE4;
+    --d-lime: #D8F35E;
+    --d-lime-soft: #EEF9B8;
+    --d-easy-bg: #DDF6C9; --d-easy: #3E8E1F;
+    --d-med-bg: #FFF1CC;  --d-med: #B27A00;
+    --d-hard-bg: #FDE3DA; --d-hard: #E0673F;
+    --d-shadow: 0 8px 30px rgba(20,20,10,.08);
+    --d-r-panel: 28px;
+    --d-r-card: 22px;
   }
-}
 
-@layer base {
+  [data-theme="dark"] {
+    --d-page: #0E0F0B;
+    --d-panel: #171812;
+    --d-card: #1F2018;
+    --d-ink: #F4F5EC;
+    --d-muted: #9A9C90;
+    --d-line: #2A2B22;
+    --d-lime: #D8F35E;
+    --d-lime-soft: #2A3010;
+    --d-easy-bg: #1a3012; --d-easy: #6fcf47;
+    --d-med-bg: #2d2200;  --d-med: #f0b429;
+    --d-hard-bg: #2d1209; --d-hard: #f47c5a;
+    --d-shadow: 0 8px 30px rgba(0,0,0,.3);
+  }
+
   body {
-    background-color: var(--bg);
-    color: var(--text);
-    font-family: var(--font-sans), sans-serif;
+    background-color: var(--d-page);
+    color: var(--d-ink);
+    font-family: 'Outfit', system-ui, sans-serif;
   }
 }

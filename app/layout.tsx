@@ -1,34 +1,29 @@
 import type { Metadata } from "next";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 const jetBrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Coding Platform",
-  description: "Solve it your way we guide you through the rest.",
+  title: "CodeArena – Learn. Solve. Level Up.",
+  description: "A guided coding platform with 4-level assistance, AI code review, multiplayer rooms, and a code explainer.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body
-        className={`${interTight.variable} ${jetBrainsMono.variable} antialiased`}
-      >
+      <body className={`${outfit.className} ${jetBrainsMono.variable} antialiased`}>
         {children}
       </body>
     </html>

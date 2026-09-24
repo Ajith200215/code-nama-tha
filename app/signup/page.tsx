@@ -1,59 +1,72 @@
-import { signup } from '../login/actions'
-import Link from 'next/link'
+'use client';
 
-export default async function SignupPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ message: string }>
-}) {
-  const { message } = await searchParams
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { ArrowRight, Loader2 } from 'lucide-react';
+
+export default function SignupPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    if (error) { setError(error.message); setLoading(false); return; }
+    router.push('/dashboard');
+  };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-[var(--bg)] text-[var(--text)]">
-      <div className="w-full max-w-md p-8 bg-[var(--surface)] border border-[var(--border)] rounded-[8px] shadow-[0_0_40px_var(--accent-glow)]">
-        <h1 className="text-2xl font-mono font-bold mb-6 text-center">Sign — up</h1>
-        
-        <form className="flex flex-col gap-4" action={signup}>
-          {message && (
-            <div className="p-3 bg-red-500/10 border border-red-500/50 text-red-500 rounded text-sm text-center">
-              {message}
+    <div className="min-h-dvh flex items-center justify-center p-4" style={{ background: 'var(--d-page)' }}>
+      <div className="w-full max-w-[420px]">
+        <Link href="/" className="flex items-center gap-2 justify-center mb-8">
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center font-black text-base"
+            style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>C</div>
+          <span className="font-bold text-[18px]" style={{ color: 'var(--d-ink)' }}>CodeArena</span>
+        </Link>
+
+        <div className="p-8 rounded-[28px]" style={{ background: 'var(--d-panel)', boxShadow: 'var(--d-shadow)' }}>
+          <h1 className="text-[26px] font-bold mb-1" style={{ color: 'var(--d-ink)' }}>Create account</h1>
+          <p className="text-[14px] mb-7" style={{ color: 'var(--d-muted)' }}>Start solving and leveling up</p>
+
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: 'var(--d-ink)' }}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 rounded-[12px] text-[14px] outline-none transition-all"
+                style={{ background: 'var(--d-card)', border: '1.5px solid var(--d-line)', color: 'var(--d-ink)' }}
+                required />
             </div>
-          )}
-          
-          <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-mono text-[var(--text-muted)]" htmlFor="email">Email</label>
-            <input 
-              id="email" 
-              name="email" 
-              type="email" 
-              required 
-              className="px-3 py-2 bg-[var(--surface-2)] border border-[var(--border)] rounded focus:outline-none focus:border-[var(--accent)] font-mono text-sm"
-            />
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <label className="text-[12px] font-mono text-[var(--text-muted)]" htmlFor="password">Password</label>
-            <input 
-              id="password" 
-              name="password" 
-              type="password" 
-              required 
-              className="px-3 py-2 bg-[var(--surface-2)] border border-[var(--border)] rounded focus:outline-none focus:border-[var(--accent)] font-mono text-sm"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className="mt-4 bg-[var(--accent-strong)] text-black font-mono font-medium py-2 rounded hover:bg-[var(--accent)] transition-colors"
-          >
-            Create Account
-          </button>
-        </form>
-        
-        <div className="mt-6 text-center text-sm font-mono text-[var(--text-muted)]">
-          Already have an account? <Link href="/login" className="text-[var(--accent)] hover:underline">Log in</Link>
+            <div>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: 'var(--d-ink)' }}>Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="Min. 6 characters"
+                className="w-full px-4 py-3 rounded-[12px] text-[14px] outline-none transition-all"
+                style={{ background: 'var(--d-card)', border: '1.5px solid var(--d-line)', color: 'var(--d-ink)' }}
+                required />
+            </div>
+            {error && <p className="text-[13px] px-3 py-2 rounded-[10px]" style={{ background: 'var(--d-hard-bg)', color: 'var(--d-hard)' }}>{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-[12px] text-[14px] font-bold transition-all hover:opacity-90 disabled:opacity-60"
+              style={{ background: 'var(--d-ink)', color: 'var(--d-panel)' }}>
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <><ArrowRight size={16} /> Create Account</>}
+            </button>
+          </form>
         </div>
+
+        <p className="text-center mt-5 text-[13px]" style={{ color: 'var(--d-muted)' }}>
+          Already have an account?{' '}
+          <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--d-ink)' }}>Sign in</Link>
+        </p>
       </div>
     </div>
-  )
+  );
 }

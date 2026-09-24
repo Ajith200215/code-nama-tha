@@ -3,27 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
-import { Users, Trophy, Copy, Check, ArrowLeft } from 'lucide-react';
+import { Users, Trophy, Copy, Check, ArrowLeft, ChevronRight } from 'lucide-react';
+import Shell from '@/components/shell';
 
-interface Room {
-  id: string;
-  name: string;
-  code: string;
-  created_by: string;
-  expires_at: string;
-}
-
-interface Member {
-  user_id: string;
-  joined_at: string;
-  profiles: { email: string };
-}
-
-interface Score {
-  user_id: string;
-  score: number;
-  profiles: { email: string };
-}
+interface Room { id: string; name: string; code: string; created_by: string; expires_at: string; }
+interface Member { user_id: string; joined_at: string; profiles: { email: string }; }
+interface Score { user_id: string; score: number; profiles: { email: string }; }
 
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -37,119 +22,91 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const fetchRoom = useCallback(async () => {
     const res = await fetch(`/api/rooms/${code}`);
     const data = await res.json();
-    if (res.ok) {
-      setRoom(data.room);
-      setMembers(data.members || []);
-      setScores(data.scores || []);
-    } else {
-      setError(data.error || 'Room not found');
-    }
+    if (res.ok) { setRoom(data.room); setMembers(data.members || []); setScores(data.scores || []); }
+    else setError(data.error || 'Room not found');
     setIsLoading(false);
   }, [code]);
 
-  useEffect(() => {
-    fetchRoom();
-  }, [fetchRoom]);
+  useEffect(() => { fetchRoom(); }, [fetchRoom]);
 
   const copyInvite = () => {
     navigator.clipboard.writeText(`${window.location.origin}/rooms/${code}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
-  const getRankColor = (rank: number) => {
-    if (rank === 0) return 'text-yellow-400';
-    if (rank === 1) return 'text-slate-300';
-    if (rank === 2) return 'text-amber-600';
-    return 'text-[var(--text-muted)]';
-  };
+  const rankEmoji = (i: number) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
 
-  const getRankEmoji = (rank: number) => {
-    if (rank === 0) return '🥇';
-    if (rank === 1) return '🥈';
-    if (rank === 2) return '🥉';
-    return `#${rank + 1}`;
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-dvh bg-[var(--bg)] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+  if (isLoading) return (
+    <Shell>
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--d-lime) transparent var(--d-lime) var(--d-lime)' }} />
       </div>
-    );
-  }
+    </Shell>
+  );
 
-  if (error || !room) {
-    return (
-      <div className="min-h-dvh bg-[var(--bg)] flex flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-2xl font-bold">Room Not Found</h1>
-        <p className="text-[var(--text-muted)]">{error || 'This room does not exist or you are not a member.'}</p>
-        <Link href="/rooms" className="text-[var(--accent)] hover:underline font-mono text-sm">← Back to Rooms</Link>
+  if (error || !room) return (
+    <Shell>
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center gap-4">
+        <h1 className="text-[24px] font-bold" style={{ color: 'var(--d-ink)' }}>Room Not Found</h1>
+        <p style={{ color: 'var(--d-muted)' }}>{error}</p>
+        <Link href="/rooms" className="flex items-center gap-1 px-4 py-2 rounded-full text-[13px] font-semibold" style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>
+          <ArrowLeft size={13} /> Back to Rooms
+        </Link>
       </div>
-    );
-  }
+    </Shell>
+  );
 
   return (
-    <div className="min-h-dvh bg-[var(--bg)] text-[var(--text)] font-sans">
-      {/* Navbar */}
-      <nav className="h-[72px] flex items-center justify-between px-[clamp(24px,6vw,92px)] border-b border-[var(--border)] bg-[var(--surface-2)]">
-        <Link href="/" className="font-mono text-lg font-bold">CodeArena¬</Link>
-        <div className="flex gap-6 font-mono text-[13px]">
-          <Link href="/rooms" className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">← Rooms</Link>
-        </div>
-      </nav>
-
-      <div className="max-w-[1100px] mx-auto px-[clamp(24px,6vw,92px)] py-10">
+    <Shell>
+      <div className="max-w-[1000px] mx-auto">
         {/* Room Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Link href="/rooms" className="text-[var(--text-muted)] hover:text-[var(--text)] transition-colors">
+              <Link href="/rooms" className="transition-colors hover:opacity-70" style={{ color: 'var(--d-muted)' }}>
                 <ArrowLeft size={16} />
               </Link>
-              <h1 className="text-3xl font-bold">{room.name}</h1>
+              <h1 className="text-[28px] font-bold" style={{ color: 'var(--d-ink)' }}>{room.name}</h1>
             </div>
             <div className="flex items-center gap-3 ml-7">
-              <span className="font-mono text-[var(--accent)] tracking-widest text-lg">{room.code}</span>
-              <button onClick={copyInvite} className="flex items-center gap-1 text-[var(--text-muted)] hover:text-[var(--text)] font-mono text-[12px] transition-colors">
-                {copied ? <><Check size={12} className="text-green-400" /> Copied!</> : <><Copy size={12} /> Copy Invite Link</>}
+              <span className="font-mono font-bold tracking-widest text-[18px]" style={{ color: 'var(--d-lime)' }}>{room.code}</span>
+              <button onClick={copyInvite} className="flex items-center gap-1 text-[12px] font-medium transition-colors hover:opacity-70" style={{ color: 'var(--d-muted)' }}>
+                {copied ? <><Check size={12} style={{ color: 'var(--d-easy)' }} /> Copied!</> : <><Copy size={12} /> Copy Invite</>}
               </button>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[12px] text-[var(--text-muted)] font-mono">Expires</p>
-            <p className="font-mono text-sm">{new Date(room.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+            <p className="text-[11px] font-semibold" style={{ color: 'var(--d-muted)' }}>EXPIRES</p>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--d-ink)' }}>{new Date(room.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Leaderboard */}
-          <div className="lg:col-span-2 bg-[var(--surface)] border border-[var(--border)] rounded-[10px] overflow-hidden">
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-[var(--border)] bg-[var(--surface-2)]">
-              <Trophy size={16} className="text-[var(--accent)]" />
-              <h2 className="font-mono font-bold text-[14px]">Leaderboard</h2>
+          <div className="lg:col-span-2 rounded-[22px] overflow-hidden" style={{ background: 'var(--d-panel)', boxShadow: 'var(--d-shadow)' }}>
+            <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: '1px solid var(--d-line)' }}>
+              <Trophy size={15} style={{ color: 'var(--d-lime)' }} />
+              <h2 className="font-bold text-[14px]" style={{ color: 'var(--d-ink)' }}>Leaderboard</h2>
             </div>
-            
             {scores.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center opacity-50">
-                <Trophy size={32} className="text-[var(--text-muted)] mb-3" />
-                <p className="font-mono text-sm text-[var(--text-muted)]">No scores yet. Start solving!</p>
+              <div className="flex flex-col items-center justify-center h-44 text-center opacity-40">
+                <Trophy size={28} className="mb-2" style={{ color: 'var(--d-muted)' }} />
+                <p className="text-[13px]" style={{ color: 'var(--d-muted)' }}>No scores yet. Start solving!</p>
               </div>
             ) : (
-              <div className="divide-y divide-[var(--border)]">
+              <div>
                 {scores.map((s, i) => (
-                  <div key={s.user_id} className={`flex items-center justify-between px-6 py-4 ${i === 0 ? 'bg-[rgba(255,200,0,0.03)]' : ''}`}>
+                  <div key={s.user_id} className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--d-line)' }}>
                     <div className="flex items-center gap-4">
-                      <span className={`font-mono text-lg w-8 text-center ${getRankColor(i)}`}>{getRankEmoji(i)}</span>
+                      <span className="text-xl w-8 text-center">{rankEmoji(i)}</span>
                       <div>
-                        <p className="font-medium text-[14px]">{s.profiles?.email?.split('@')[0] || 'Unknown'}</p>
-                        <p className="text-[11px] text-[var(--text-muted)] font-mono">{s.profiles?.email}</p>
+                        <p className="font-semibold text-[14px]" style={{ color: 'var(--d-ink)' }}>{s.profiles?.email?.split('@')[0]}</p>
+                        <p className="text-[11px]" style={{ color: 'var(--d-muted)' }}>{s.profiles?.email}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-mono font-bold text-xl ${i === 0 ? 'text-yellow-400' : 'text-[var(--text)]'}`}>{s.score}</p>
-                      <p className="text-[11px] text-[var(--text-muted)] font-mono">points</p>
+                      <p className="font-bold text-[20px]" style={{ color: i === 0 ? '#B89B00' : 'var(--d-ink)' }}>{s.score}</p>
+                      <p className="text-[11px]" style={{ color: 'var(--d-muted)' }}>points</p>
                     </div>
                   </div>
                 ))}
@@ -157,59 +114,51 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
             )}
           </div>
 
-          {/* Members Panel */}
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[10px] overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--border)] bg-[var(--surface-2)]">
-              <Users size={14} className="text-[var(--accent)]" />
-              <h2 className="font-mono font-bold text-[14px]">Members</h2>
-              <span className="ml-auto bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-muted)] font-mono text-[11px] px-2 py-0.5 rounded-full">{members.length}</span>
-            </div>
-            <div className="divide-y divide-[var(--border)]">
+          {/* Right panel */}
+          <div className="flex flex-col gap-4">
+            {/* Members */}
+            <div className="rounded-[22px] overflow-hidden" style={{ background: 'var(--d-panel)', boxShadow: 'var(--d-shadow)' }}>
+              <div className="flex items-center gap-2 px-5 py-4" style={{ borderBottom: '1px solid var(--d-line)' }}>
+                <Users size={14} style={{ color: 'var(--d-lime)' }} />
+                <h2 className="font-bold text-[14px]" style={{ color: 'var(--d-ink)' }}>Members</h2>
+                <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'var(--d-lime-soft)', color: 'var(--d-ink)' }}>{members.length}</span>
+              </div>
               {members.map(m => (
-                <div key={m.user_id} className="flex items-center gap-3 px-5 py-3">
-                  <div className="w-7 h-7 rounded-full bg-[var(--accent-glow)] border border-[var(--accent)] flex items-center justify-center text-[10px] font-mono text-[var(--accent)] uppercase font-bold">
+                <div key={m.user_id} className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: '1px solid var(--d-line)' }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold uppercase"
+                    style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>
                     {m.profiles?.email?.[0] || '?'}
                   </div>
                   <div>
-                    <p className="text-[13px] font-medium">{m.profiles?.email?.split('@')[0] || 'Unknown'}</p>
-                    <p className="text-[11px] text-[var(--text-muted)] font-mono">Joined {new Date(m.joined_at).toLocaleDateString()}</p>
+                    <p className="text-[13px] font-medium" style={{ color: 'var(--d-ink)' }}>{m.profiles?.email?.split('@')[0]}</p>
+                    <p className="text-[11px]" style={{ color: 'var(--d-muted)' }}>{new Date(m.joined_at).toLocaleDateString()}</p>
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Invite Card */}
-            <div className="p-4 border-t border-[var(--border)] bg-[var(--surface-2)]">
-              <p className="text-[11px] text-[var(--text-muted)] font-mono mb-2">Share this code to invite:</p>
-              <div className="flex items-center justify-between bg-[var(--bg)] border border-[var(--border)] rounded-[6px] px-3 py-2">
-                <span className="font-mono text-[var(--accent)] tracking-[0.3em] font-bold">{room.code}</span>
-                <button onClick={copyInvite} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                </button>
+              {/* Invite box */}
+              <div className="p-4" style={{ borderTop: '1px solid var(--d-line)', background: 'var(--d-card)' }}>
+                <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--d-muted)' }}>SHARE CODE</p>
+                <div className="flex items-center justify-between px-3 py-2 rounded-[10px]" style={{ background: 'var(--d-panel)', border: '1px solid var(--d-line)' }}>
+                  <span className="font-mono font-bold tracking-[0.3em]" style={{ color: 'var(--d-lime)' }}>{room.code}</span>
+                  <button onClick={copyInvite} style={{ color: 'var(--d-muted)' }} className="hover:opacity-70 transition-opacity">
+                    {copied ? <Check size={13} style={{ color: 'var(--d-easy)' }} /> : <Copy size={13} />}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Problems section placeholder */}
-        <div className="mt-6 p-6 bg-[var(--surface)] border border-[var(--border)] rounded-[10px]">
-          <h2 className="font-mono font-bold text-[14px] mb-4 flex items-center gap-2">
-            <span className="text-[var(--accent)]">{'>'}</span> Today&apos;s Problems
-          </h2>
-          <div className="flex flex-col items-center justify-center h-32 text-center opacity-50">
-            <p className="font-mono text-sm text-[var(--text-muted)]">Daily problem rotation coming soon.</p>
-            <p className="text-[11px] text-[var(--text-muted)] mt-1">For now, use the Problems page and race your friends!</p>
-          </div>
-          <div className="mt-4 flex justify-center">
-            <Link
-              href="/problems"
-              className="flex items-center gap-2 border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-glow)] px-5 py-2 rounded-[6px] font-mono text-[13px] transition-all"
-            >
-              Go to Problems →
-            </Link>
+            {/* Problems CTA */}
+            <div className="p-5 rounded-[22px]" style={{ background: 'var(--d-ink)', color: 'var(--d-panel)' }}>
+              <p className="font-bold text-[14px] mb-1">Today&apos;s Race</p>
+              <p className="text-[12px] mb-4" style={{ color: 'var(--d-muted)' }}>Compete with your room on problems.</p>
+              <Link href="/problems" className="flex items-center gap-1 text-[13px] font-bold px-4 py-2 rounded-full w-fit"
+                style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>
+                Go to Problems <ChevronRight size={13} />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Shell>
   );
 }
