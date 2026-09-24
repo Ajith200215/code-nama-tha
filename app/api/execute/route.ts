@@ -6,9 +6,6 @@ import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
 import { v4 as uuidv4 } from 'uuid';
-import util from 'util';
-
-const execPromise = util.promisify(exec);
 
 const executeSchema = z.object({
   code: z.string().min(1, "Code cannot be empty"),
@@ -74,15 +71,20 @@ export async function POST(request: Request) {
         const inputPath = join(os.tmpdir(), `input_${fileId}.txt`);
         await writeFile(inputPath, tc.input);
 
-        const { stdout, stderr } = await execPromise(`python "${filePath}" < "${inputPath}"`, { timeout: 3000 });
+        const { stdout, stderr } = await new Promise<{stdout: string, stderr: string}>((resolve, reject) => {
+          exec(`python "${filePath}" < "${inputPath}"`, { timeout: 3000 }, (error, stdout, stderr) => {
+            if (error && !stdout && !stderr) reject(error);
+            else resolve({ stdout: String(stdout), stderr: String(stderr) });
+          });
+        });
         
         const cleanOutput = (stdout || stderr).trim();
         const cleanExpected = tc.expected_output.trim();
         const isPass = !stderr && cleanOutput === cleanExpected;
 
         // Cleanup
-        await unlink(filePath).catch(() => {});
-        await unlink(inputPath).catch(() => {});
+        try { await unlink(filePath); } catch {}
+        try { await unlink(inputPath); } catch {}
 
         const out = {
           passed: isPass,
@@ -100,13 +102,14 @@ export async function POST(request: Request) {
 
         return out;
 
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errObj = err as Record<string, unknown>;
         // Cleanup
-        await unlink(filePath).catch(() => {});
+        try { await unlink(filePath); } catch {}
         return {
           passed: false,
           status: 'Runtime Error',
-          output: err.stderr || err.message,
+          output: String(errObj.stderr || errObj.message || 'Unknown error'),
           expected: tc.expected_output,
           input: tc.input,
         };

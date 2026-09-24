@@ -21,6 +21,25 @@ vi.mock('@/lib/supabase/server', () => {
   };
 });
 
+// Mock child_process for execution engine
+vi.mock('child_process', () => {
+  let callCount = 0;
+  return {
+    exec: vi.fn((cmd, options, callback) => {
+      callCount++;
+      if (callCount === 1) callback(null, '3', '');
+      else if (callCount === 2) callback(null, '8', '');
+      else callback(null, '', '');
+    }),
+  };
+});
+
+// Mock fs/promises
+vi.mock('fs/promises', () => ({
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  unlink: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { createClient } from '@/lib/supabase/server';
 
 describe('POST /api/execute', () => {
@@ -80,11 +99,11 @@ describe('POST /api/execute', () => {
     const json = await (res as any).json();
     
     expect(json.results).toHaveLength(2);
-    
+
     // First test case (public, passed)
     expect(json.results[0].passed).toBe(true);
     expect(json.results[0].expected).toBe('3');
-    
+
     // Second test case (hidden, failed)
     expect(json.results[1].passed).toBe(false);
     expect(json.results[1].expected).toBe('Hidden');

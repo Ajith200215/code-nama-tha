@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, CircleAlert, CheckCircle2 } from 'lucide-react';
+import { Play, CircleAlert, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -16,6 +16,10 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
   
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any[] | null>(null);
+
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewText, setReviewText] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const handleLevelChange = (lvl: number) => {
     setActiveLevel(lvl);
@@ -49,6 +53,33 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
       setResults([{ passed: false, status: 'Error', output: 'Failed to connect to execution engine.' }]);
     }
     setIsRunning(false);
+  };
+
+  const getReview = async () => {
+    setIsReviewing(true);
+    setShowReviewModal(true);
+    setReviewText(null);
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          language,
+          problem_title: problem.title,
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReviewText(data.review);
+      } else {
+        setReviewText("Error: " + (data.error || "Failed to get review."));
+      }
+    } catch (e) {
+      console.error(e);
+      setReviewText("Failed to connect to review engine.");
+    }
+    setIsReviewing(false);
   };
 
   return (
@@ -124,22 +155,32 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
             </div>
           </div>
           
-          <button 
-            onClick={runCode}
-            disabled={isRunning}
-            className="flex items-center gap-2 bg-[var(--accent-strong)] hover:bg-[var(--accent)] text-black px-4 py-1.5 rounded-[6px] font-mono text-[13px] font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent-glow)] disabled:opacity-50"
-          >
-            {isRunning ? (
-              <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Play size={14} className="fill-black" />
-            )}
-            Run Code
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={getReview}
+              disabled={isReviewing}
+              className="flex items-center gap-2 bg-[var(--surface-2)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] px-4 py-1.5 rounded-[6px] font-mono text-[13px] font-medium transition-all disabled:opacity-50"
+            >
+              <Sparkles size={14} className="text-[var(--accent)]" />
+              Get AI Review
+            </button>
+            <button 
+              onClick={runCode}
+              disabled={isRunning}
+              className="flex items-center gap-2 bg-[var(--accent-strong)] hover:bg-[var(--accent)] text-black px-4 py-1.5 rounded-[6px] font-mono text-[13px] font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent-glow)] disabled:opacity-50"
+            >
+              {isRunning ? (
+                <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play size={14} className="fill-black" />
+              )}
+              Run Code
+            </button>
+          </div>
         </div>
 
         {/* Monaco Editor */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <Editor
             height="100%"
             language={language}
@@ -156,6 +197,36 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
               wordWrap: 'on'
             }}
           />
+          
+          {/* AI Review Modal */}
+          {showReviewModal && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 animate-in fade-in duration-200">
+              <div className="w-full max-w-2xl bg-[var(--surface)] border border-[var(--border)] rounded-[8px] shadow-[0_0_40px_var(--accent-glow)] flex flex-col max-h-full">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+                  <div className="flex items-center gap-2 font-mono font-bold text-lg">
+                    <Sparkles className="text-[var(--accent)]" /> AI Code Review
+                  </div>
+                  <button onClick={() => setShowReviewModal(false)} className="text-[var(--text-muted)] hover:text-white">
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="p-6 overflow-y-auto">
+                  {isReviewing ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                      <Sparkles className="text-[var(--accent)] animate-pulse" size={32} />
+                      <p className="font-mono text-[var(--text-muted)]">Analyzing complexity and style...</p>
+                    </div>
+                  ) : (
+                    <div className="prose prose-invert prose-p:text-[var(--text-muted)] prose-strong:text-white max-w-none">
+                      {reviewText?.split('\n').map((line, i) => (
+                        <p key={i}>{line}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Console / Test Results */}
