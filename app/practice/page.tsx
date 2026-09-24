@@ -355,7 +355,7 @@ export default function PracticePage() {
                           )}
 
                           <div className="flex gap-2 mt-4">
-                            <Link href={`/problems/two-sum`}
+                            <Link href={`/practice/${p.id}`}
                               className="flex items-center gap-1 px-4 py-2 rounded-full text-[12px] font-bold transition-all hover:opacity-90"
                               style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>
                               <Code2 size={13} /> Solve in Editor
@@ -408,7 +408,7 @@ export default function PracticePage() {
                           </div>
                         </div>
                       </div>
-                      <Link href="/problems/two-sum"
+                      <Link href={`/practice/${p.id}`}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all hover:opacity-90"
                         style={{ background: 'var(--d-lime)', color: 'var(--d-ink)' }}>
                         Solve <ChevronRight size={12} />
