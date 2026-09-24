@@ -6,6 +6,7 @@ import Editor from '@monaco-editor/react';
 import { Play, CircleAlert, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 export default function ProblemWorkspace({ problem, testCases, levels, isCustom = false }: any) {
   const [activeLevel, setActiveLevel] = useState(3);
@@ -112,10 +113,13 @@ export default function ProblemWorkspace({ problem, testCases, levels, isCustom 
 
         <div className="p-6 flex-1 overflow-y-auto">
           <h1 className="text-[22px] font-bold mb-4" style={{ color: 'var(--d-ink)' }}>{problem.title}</h1>
-          <div className="text-[14px] leading-relaxed max-w-none" style={{ color: 'var(--d-muted)' }}>
-            {problem.description.split('\n').map((line: string, i: number) => (
-              <p key={i} className="mb-3">{line}</p>
-            ))}
+          <div className="text-[14px] leading-relaxed max-w-none prose prose-invert prose-p:mb-3" style={{ color: 'var(--d-muted)' }}>
+            <ReactMarkdown components={{
+              p: ({node, ...props}) => <p className="mb-3" {...props} />,
+              strong: ({node, ...props}) => <strong style={{ color: 'var(--d-ink)' }} {...props} />
+            }}>
+              {problem.description}
+            </ReactMarkdown>
           </div>
 
           <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--d-line)' }}>
@@ -231,10 +235,13 @@ export default function ProblemWorkspace({ problem, testCases, levels, isCustom 
                       <p className="font-semibold text-[13px]" style={{ color: 'var(--d-muted)' }}>Analyzing complexity and style...</p>
                     </div>
                   ) : (
-                    <div className="prose prose-p:text-[14px] max-w-none">
-                      {reviewText?.split('\n').map((line, i) => (
-                        <p key={i} className="mb-2">{line}</p>
-                      ))}
+                    <div className="prose prose-p:text-[14px] max-w-none" style={{ color: 'var(--d-ink)' }}>
+                      <ReactMarkdown components={{
+                        p: ({node, ...props}) => <p className="mb-2" {...props} />,
+                        strong: ({node, ...props}) => <strong style={{ color: 'var(--d-ink)' }} {...props} />
+                      }}>
+                        {reviewText || ''}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
