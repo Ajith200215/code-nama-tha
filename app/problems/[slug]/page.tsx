@@ -57,11 +57,11 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
     .select('*')
     .eq('problem_id', problemData.id);
 
-  const testCasesData = testCases?.length ? testCases : [
+  const testCasesData = testCases?.length ? testCases : (slug === 'two-sum' ? [
     { input: '[2,7,11,15]\n9', expected_output: '[0, 1]', is_hidden: false },
     { input: '[3,2,4]\n6', expected_output: '[1, 2]', is_hidden: false },
     { input: '[3,3]\n6', expected_output: '[0, 1]', is_hidden: true },
-  ];
+  ] : []);
 
   // Fetch problem levels (templates and hints)
   const { data: levels } = await supabase
