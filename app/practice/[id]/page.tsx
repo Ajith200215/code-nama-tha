@@ -101,6 +101,7 @@ if __name__ == '__main__':
         problem={problemData} 
         testCases={testCasesData} 
         levels={levelsData} 
+        isCustom={true}
       />
     </Shell>
   );

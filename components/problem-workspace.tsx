@@ -7,7 +7,7 @@ import { Play, CircleAlert, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-export default function ProblemWorkspace({ problem, testCases, levels }: any) {
+export default function ProblemWorkspace({ problem, testCases, levels, isCustom = false }: any) {
   const [activeLevel, setActiveLevel] = useState(3);
   const language = 'python'; // Hardcoded language
   
@@ -22,11 +22,16 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   const handleLevelChange = (lvl: number) => {
-    setActiveLevel(lvl);
     const newLevelData = levels.find((l: any) => l.level === lvl && l.language === language);
     if (newLevelData) {
+      if (code !== currentLevelData.template_code && code.trim() !== '') {
+        if (!window.confirm("Changing levels will reset your code to this level's template. Are you sure?")) {
+          return;
+        }
+      }
       setCode(newLevelData.template_code);
     }
+    setActiveLevel(lvl);
     setResults(null);
   };
 
@@ -39,8 +44,8 @@ export default function ProblemWorkspace({ problem, testCases, levels }: any) {
         body: JSON.stringify({
           code,
           language,
-          problem_id: problem.id !== 'mock-uuid' ? problem.id : undefined,
-          testCases: problem.id === 'mock-uuid' ? testCases : undefined,
+          problem_id: (!isCustom && problem.id !== 'mock-uuid') ? problem.id : undefined,
+          testCases: (isCustom || problem.id === 'mock-uuid') ? testCases : undefined,
         })
       });
       const data = await res.json();
