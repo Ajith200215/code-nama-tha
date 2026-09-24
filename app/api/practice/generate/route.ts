@@ -18,6 +18,11 @@ const ProblemSchema = z.object({
     input: z.string(),
     expected_output: z.string(),
   })).default([]),
+  levels: z.array(z.object({
+    level: z.number(),
+    template_code: z.string(),
+    hints: z.array(z.string()),
+  })).default([]),
 });
 
 function extractJSON(text: string): string {
@@ -34,13 +39,18 @@ Topics: ${topics.join(', ')}
 Difficulty: ${difficulty}
 
 Respond with ONLY a JSON object — no markdown, no explanation, no extra text. Use exactly this shape:
-{"title":"Sum of Array","description":"Given array nums, return sum of all elements. Print the result.","examples":[{"input":"[1,2,3]","output":"6","explanation":"1+2+3=6"}],"constraints":["1<=n<=100","integers only"],"difficulty":"Easy","topics":["Array"],"reference_solution":"nums=list(map(int,input().split()))\\nprint(sum(nums))","test_cases":[{"input":"1 2 3","expected_output":"6"}]}
+{"title":"Sum of Array","description":"Given array nums, return sum of all elements. Print the result.","examples":[{"input":"[1,2,3]","output":"6","explanation":"1+2+3=6"}],"constraints":["1<=n<=100","integers only"],"difficulty":"Easy","topics":["Array"],"reference_solution":"nums=list(map(int,input().split()))\\nprint(sum(nums))","test_cases":[{"input":"1 2 3","expected_output":"6"}],"levels":[{"level":3,"template_code":"# TODO: read input\\n# TODO: print sum","hints":["Read input","Print sum"]},{"level":2,"template_code":"# TODO: read input","hints":["Read input"]},{"level":1,"template_code":"# read input\\n# print sum","hints":["Read input"]},{"level":0,"template_code":"","hints":[]}]}
 
 Rules:
 - Python only. reference_solution reads from stdin, prints to stdout.
 - Keep description under 150 chars.
 - Max 2 examples, 2 test_cases, 2 constraints.
-- difficulty must be exactly "Easy", "Medium", or "Hard".`;
+- difficulty must be exactly "Easy", "Medium", or "Hard".
+- MUST INCLUDE 'levels' array with exactly 4 objects for levels 3, 2, 1, 0:
+  * L3: ~80% of reference_solution, comment on EVERY line, small blanks with '# TODO'.
+  * L2: ~40% of reference_solution, line-by-line comments, larger blanks.
+  * L1: zero code, only comments providing clear step-by-step guidance.
+  * L0: empty starter code (just basic stdin read).`;
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("No Gemini API key available");

@@ -55,55 +55,41 @@ export default async function CustomProblemPage({ params }: { params: Promise<{ 
   const refCode = parsedDesc.reference_solution || '';
   const refLines = refCode.split('\n');
 
-  // L3: ~80% code, comments on every line, small blanks
-  const l3Code = refLines.map((line: string, i: number) => {
+  // Fallback generation for older problems that don't have native levels
+  const l3Fallback = refLines.map((line: string, i: number) => {
     if (line.trim() === '') return line;
     if (i >= refLines.length * 0.8) return `${line.match(/^\\s*/)?.[0] || ''}# TODO: finish this line`;
     return `${line} # <understand this logic>`;
   }).join('\n');
 
-  // L2: ~40% code, line-by-line comments, larger blanks
-  const l2Code = refLines.map((line: string, i: number) => {
+  const l2Fallback = refLines.map((line: string, i: number) => {
     if (line.trim() === '') return line;
     if (i >= refLines.length * 0.4) return `${line.match(/^\\s*/)?.[0] || ''}# TODO: implement step ${i+1}`;
     return `${line} # <understand this logic>`;
   }).join('\n');
 
-  // L1: comments only, zero code revealed
-  const l1Code = refLines.map((line: string, i: number) => {
+  const l1Fallback = refLines.map((line: string, i: number) => {
     if (line.trim() === '') return line;
     return `${line.match(/^\\s*/)?.[0] || ''}# Step ${i + 1}: implement logic here`;
   }).join('\n');
 
-  // L0: empty starter
-  const l0Code = `# Read from stdin and print to stdout\nimport sys\n\ndef solve():\n    # Write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
+  const l0Fallback = `# Read from stdin and print to stdout\nimport sys\n\ndef solve():\n    # Write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()\n`;
 
-  const levelsData = [
-    {
-      level: 3,
-      language: 'python',
-      template_code: l3Code || l0Code,
-      hints: ['Fill in the TODO blanks at the bottom.', 'Look at the commented code above for structure.'],
-    },
-    {
-      level: 2,
-      language: 'python',
-      template_code: l2Code || l0Code,
-      hints: ['You have the beginning structure. Now complete the core logic.'],
-    },
-    {
-      level: 1,
-      language: 'python',
-      template_code: l1Code || l0Code,
-      hints: ['Follow the step-by-step comments to write the algorithm from scratch.'],
-    },
-    {
-      level: 0,
-      language: 'python',
-      template_code: refCode || l0Code,
-      hints: [],
-    }
+  const fallbackLevels = [
+    { level: 3, language: 'python', template_code: l3Fallback || l0Fallback, hints: ['Fill in the TODO blanks at the bottom.', 'Look at the commented code above for structure.'] },
+    { level: 2, language: 'python', template_code: l2Fallback || l0Fallback, hints: ['You have the beginning structure. Now complete the core logic.'] },
+    { level: 1, language: 'python', template_code: l1Fallback || l0Fallback, hints: ['Follow the step-by-step comments to write the algorithm from scratch.'] },
+    { level: 0, language: 'python', template_code: refCode || l0Fallback, hints: [] }
   ];
+
+  const levelsData = (parsedDesc.levels && parsedDesc.levels.length === 4) 
+    ? parsedDesc.levels.map((l: { level: number, template_code: string, hints: string[] }) => ({
+        level: l.level,
+        language: 'python',
+        template_code: l.template_code,
+        hints: l.hints || []
+      }))
+    : fallbackLevels;
 
   return (
     <Shell>
