@@ -100,15 +100,67 @@ export default function DashboardPage() {
   const [dark, setDark] = useState(false);
   const [activeTopic, setActiveTopic] = useState('Arrays');
   const [user, setUser] = useState<{ email?: string } | null>(null);
-  const [streak] = useState(7);
+  const [streak, setStreak] = useState(0);
+  const [submissions, setSubmissions] = useState<unknown[]>([]);
+  const [stats, setStats] = useState({ easy: 0, med: 0, hard: 0, total: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/login'); return; }
       setUser(data.user);
+      fetchDashboardData(supabase, data.user.id);
     });
   }, [router]);
+
+  async function fetchDashboardData(supabase: unknown, userId: string) {
+    // 1. Fetch recent submissions with problem details
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('*, problems(title, difficulty)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (subs) {
+      setSubmissions(subs.map(s => ({
+        title: s.problems?.title || 'Custom Problem',
+        difficulty: s.problems?.difficulty || 'Medium',
+        date: new Date(s.created_at).toLocaleDateString(),
+        runtime: s.execution_time ? `${s.execution_time}ms` : '-',
+        status: s.status,
+      })));
+    }
+
+    // 2. Fetch distinct accepted submissions for stats
+    const { data: acceptedSubs } = await supabase
+      .from('submissions')
+      .select('problem_id, problems(difficulty)')
+      .eq('user_id', userId)
+      .eq('status', 'Accepted');
+    
+    if (acceptedSubs) {
+      // deduplicate by problem_id
+      const unique = new Map();
+      acceptedSubs.forEach(s => {
+        if (!unique.has(s.problem_id)) {
+           unique.set(s.problem_id, s.problems?.difficulty || 'Medium');
+        }
+      });
+      let easy = 0, med = 0, hard = 0;
+      unique.forEach(diff => {
+        if (diff === 'Easy') easy++;
+        else if (diff === 'Medium') med++;
+        else if (diff === 'Hard') hard++;
+      });
+      setStats({ easy, med, hard, total: unique.size });
+    }
+    
+    // 3. Mock streak logic for now
+    setStreak(Math.floor(Math.random() * 5) + 1);
+    setLoadingStats(false);
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-dodo', dark ? 'dark' : 'light');

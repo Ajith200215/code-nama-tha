@@ -118,7 +118,8 @@ if __name__ == '__main__':
       <ProblemWorkspace 
         problem={problemData} 
         testCases={testCasesData} 
-        levels={levelsData} 
+        levels={levelsData}
+        needsAiLevels={levelsData.length < 4}
       />
     </Shell>
   );

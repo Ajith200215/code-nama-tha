@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play, CircleAlert, CheckCircle2, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 
-export default function ProblemWorkspace({ problem, testCases, levels, isCustom = false }: any) {
+export default function ProblemWorkspace({ problem, testCases, levels, isCustom = false, needsAiLevels = false }: any) {
   const [activeLevel, setActiveLevel] = useState(3);
   const language = 'python'; // Hardcoded language
   
-  const currentLevelData = levels.find((l: any) => l.level === activeLevel && l.language === language) || levels[0];
+  const [dynamicLevels, setDynamicLevels] = useState(levels);
+  const [generatingLevels, setGeneratingLevels] = useState(false);
+
+  const currentLevelData = dynamicLevels.find((l: any) => l.level === activeLevel && l.language === language) || dynamicLevels[0] || levels[0];
   const [code, setCode] = useState(currentLevelData.template_code);
   
   const [isRunning, setIsRunning] = useState(false);
@@ -23,7 +26,7 @@ export default function ProblemWorkspace({ problem, testCases, levels, isCustom 
   const [showReviewModal, setShowReviewModal] = useState(false);
 
   const handleLevelChange = (lvl: number) => {
-    const newLevelData = levels.find((l: any) => l.level === lvl && l.language === language);
+    const newLevelData = dynamicLevels.find((l: any) => l.level === lvl && l.language === language);
     if (newLevelData) {
       if (code !== currentLevelData.template_code && code.trim() !== '') {
         if (!window.confirm("Changing levels will reset your code to this level's template. Are you sure?")) {
@@ -35,6 +38,24 @@ export default function ProblemWorkspace({ problem, testCases, levels, isCustom 
     setActiveLevel(lvl);
     setResults(null);
   };
+
+
+  useEffect(() => {
+    if (needsAiLevels && dynamicLevels.length < 4 && !generatingLevels) {
+      setGeneratingLevels(true);
+      fetch(`/api/problems/${problem.slug}/levels`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.levels) {
+            const formattedLevels = data.levels.map((l: any) => ({ ...l, language: 'python' }));
+            setDynamicLevels(formattedLevels);
+            const active = formattedLevels.find((l: any) => l.level === activeLevel);
+            if (active) setCode(active.template_code);
+          }
+        })
+        .finally(() => setGeneratingLevels(false));
+    }
+  }, [needsAiLevels, problem.slug, activeLevel, dynamicLevels.length, generatingLevels]);
 
   const runCode = async () => {
     setIsRunning(true);
@@ -124,9 +145,13 @@ export default function ProblemWorkspace({ problem, testCases, levels, isCustom 
 
           <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--d-line)' }}>
             <h3 className="font-bold text-[13px] mb-4" style={{ color: 'var(--d-ink)' }}>Level {activeLevel} Hints</h3>
-            {currentLevelData.hints.length > 0 ? (
+            {generatingLevels ? (
+              <div className="p-4 rounded-[14px] text-[13px] italic flex items-center gap-2" style={{ background: 'var(--d-lime-soft)', color: 'var(--d-ink)' }}>
+                <Sparkles size={14} className="animate-pulse" /> AI is generating custom level assistance...
+              </div>
+            ) : (currentLevelData.hints || []).length > 0 ? (
               <ul className="space-y-3">
-                {currentLevelData.hints.map((hint: string, i: number) => (
+                {(currentLevelData.hints || []).map((hint: string, i: number) => (
                   <li key={i} className="p-4 rounded-[14px] text-[13px] leading-relaxed flex items-start gap-2"
                     style={{ background: 'var(--d-card)', color: 'var(--d-ink)' }}>
                     <span style={{ color: 'var(--d-lime)' }}>💡</span>{hint}
