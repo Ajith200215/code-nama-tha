@@ -56,6 +56,7 @@ function QuotaBar({ used, limit }: { used: number; limit: number }) {
 export default function PracticePage() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [customTopic, setCustomTopic] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard' | 'mixed'>('mixed');
   const [count, setCount] = useState(3);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -104,7 +105,7 @@ export default function PracticePage() {
       const res = await fetch('/api/practice/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topics: selectedTopics, difficulty, count }),
+        body: JSON.stringify({ topics: selectedTopics, difficulty, count, apiKey: apiKey.trim() || undefined }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -213,6 +214,21 @@ export default function PracticePage() {
                 <h2 className="font-bold text-[15px] mb-4" style={{ color: 'var(--d-ink)' }}>Settings</h2>
 
                 <div className="mb-4">
+                  <p className="text-[12px] font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--d-muted)' }}>
+                    CUSTOM API KEY <span className="text-[10px] bg-[var(--d-lime-soft)] text-[var(--d-ink)] px-2 py-0.5 rounded-full">Optional</span>
+                  </p>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={e => setApiKey(e.target.value)}
+                    placeholder="Enter your Gemini API Key..."
+                    className="w-full px-4 py-2.5 rounded-full text-[13px] outline-none mb-1"
+                    style={{ background: 'var(--d-card)', border: '1.5px solid var(--d-line)', color: 'var(--d-ink)' }}
+                  />
+                  <p className="text-[11px] px-2" style={{ color: 'var(--d-muted)' }}>Use your own key if generation fails due to high load.</p>
+                </div>
+
+                <div className="mb-4 pt-4" style={{ borderTop: '1px solid var(--d-line)' }}>
                   <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--d-muted)' }}>DIFFICULTY</p>
                   <div className="flex gap-2 flex-wrap">
                     {(['mixed', 'Easy', 'Medium', 'Hard'] as const).map(d => (

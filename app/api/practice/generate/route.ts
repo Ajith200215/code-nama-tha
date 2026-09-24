@@ -28,7 +28,7 @@ function extractJSON(text: string): string {
   return text.trim();
 }
 
-async function generateOneProblem(topics: string[], difficulty: string, idx: number, total: number) {
+async function generateOneProblem(topics: string[], difficulty: string, idx: number, total: number, providedApiKey?: string) {
   const prompt = `Generate a unique coding problem #${idx + 1} of ${total} for a learning platform.
 Topics: ${topics.join(', ')}
 Difficulty: ${difficulty}
@@ -42,8 +42,8 @@ Rules:
 - Max 2 examples, 2 test_cases, 2 constraints.
 - difficulty must be exactly "Easy", "Medium", or "Hard".`;
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is missing");
+  const apiKey = providedApiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("No Gemini API key available");
 
   const models = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-2.5-flash-preview', 'gemini-2.0-flash'];
   let lastError = null;
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { topics, difficulty, count = 2 } = await req.json();
+    const { topics, difficulty, count = 2, apiKey } = await req.json();
     if (!topics || !Array.isArray(topics) || topics.length === 0) {
       return NextResponse.json({ error: 'Please provide at least one topic' }, { status: 400 });
     }
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
 
     for (let i = 0; i < safeCount; i++) {
       try {
-        const problem = await generateOneProblem(topics, difficultyLabel, i, safeCount);
+        const problem = await generateOneProblem(topics, difficultyLabel, i, safeCount, apiKey);
         problems.push(problem);
       } catch (err: unknown) {
         console.error(`Problem ${i + 1} generation/parse failed:`, err instanceof Error ? err.message : err);
