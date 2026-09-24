@@ -46,7 +46,7 @@ ${code}
         messages: [
           { role: 'user', content: prompt }
         ],
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-20b',
       });
       responseText = completion.choices[0]?.message?.content || '';
     } catch (error: unknown) {

@@ -15,17 +15,24 @@ export async function POST(req: Request) {
 
     const systemPrompt = `You are an expert coding tutor. Explain the following code in simple, beginner-friendly terms.
     Your response MUST be formatted strictly in Markdown. Use the following structure:
-    # Beginner Summary
-    (A 1-2 sentence high-level summary of what the code does)
+
+    ## Beginner Summary
+    (A 1-2 sentence high-level summary of what the code does. Keep it plain and simple.)
     
-    # Real-life Analogy
-    (Explain the core logic using a simple real-life analogy)
+    ## Real-life Analogy
+    (Explain the core concept using a simple, relatable real-life analogy. Use bold for key terms.)
     
-    # Line-by-Line Breakdown
-    (Break down important lines or blocks of code)
+    ## Line-by-Line Breakdown
+    (Use bullet points - one bullet per important line or block. Format each like: \`code\` — plain English explanation.)
     
-    # Simpler Alternative (if any)
-    (Provide a simpler or more modern way to write this, if applicable. Wrap code in markdown blocks.)
+    ## Simpler Alternative
+    (If applicable, show a simpler or more modern way to write this. Always wrap code in a fenced code block with the language tag.)
+
+    Rules:
+    - NEVER use markdown tables.
+    - Use bullet lists for the breakdown.
+    - Keep language very simple, assume the reader is new to coding.
+    - Use backticks for inline code.
     `;
 
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'CODE TO EXPLAIN:\n' + code }
         ],
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-20b',
       });
       responseText = completion.choices[0]?.message?.content || '';
     } catch (error: unknown) {

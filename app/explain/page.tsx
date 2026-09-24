@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, Loader2 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ExplainPage() {
   const [code, setCode] = useState('def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)');
@@ -98,14 +100,28 @@ export default function ExplainPage() {
               <p className="font-mono text-sm text-[var(--text-muted)]">Analyzing logic and crafting analogies...</p>
             </div>
           ) : (
-            <div className="prose prose-invert prose-p:text-[var(--text-muted)] prose-strong:text-white prose-pre:bg-[var(--surface-2)] prose-pre:border prose-pre:border-[var(--border)] prose-a:text-[var(--accent)] max-w-none">
-              {explanation?.split('\n').map((line, i) => {
-                if (line.startsWith('# ')) return <h2 key={i} className="text-xl font-bold mt-6 mb-4">{line.slice(2)}</h2>;
-                if (line.startsWith('## ')) return <h3 key={i} className="text-lg font-bold mt-5 mb-3">{line.slice(3)}</h3>;
-                if (line.startsWith('- ')) return <li key={i} className="ml-4 mb-1">{line.slice(2)}</li>;
-                if (line.trim() === '') return <br key={i} />;
-                return <p key={i} className="mb-2">{line}</p>;
-              })}
+            <div className="
+              [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mt-0 [&_h1]:mb-3 [&_h1]:text-white
+              [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:text-white [&_h2]:border-b [&_h2]:border-[var(--border)] [&_h2]:pb-2
+              [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-[var(--accent)]
+              [&_p]:mb-3 [&_p]:text-[var(--text-muted)] [&_p]:leading-relaxed [&_p]:text-[14px]
+              [&_ul]:mb-3 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:text-[var(--text-muted)]
+              [&_ol]:mb-3 [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:text-[var(--text-muted)]
+              [&_li]:mb-1 [&_li]:leading-relaxed [&_li]:text-[14px]
+              [&_strong]:text-white [&_strong]:font-semibold
+              [&_em]:text-[var(--accent)] [&_em]:italic
+              [&_code]:bg-[var(--surface-2)] [&_code]:text-[var(--accent)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:font-mono [&_code]:text-[12px]
+              [&_pre]:bg-[#0a0a0a] [&_pre]:border [&_pre]:border-[var(--border)] [&_pre]:rounded-[6px] [&_pre]:p-4 [&_pre]:mb-4 [&_pre]:overflow-x-auto
+              [&_pre_code]:bg-transparent [&_pre_code]:text-[#e2e8f0] [&_pre_code]:p-0 [&_pre_code]:text-[13px]
+              [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--accent)] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[var(--text-muted)] [&_blockquote]:my-3
+              [&_hr]:border-[var(--border)] [&_hr]:my-4
+              [&_table]:w-full [&_table]:mb-4 [&_table]:border-collapse [&_table]:text-[13px]
+              [&_thead]:bg-[var(--surface-2)]
+              [&_th]:border [&_th]:border-[var(--border)] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-white
+              [&_td]:border [&_td]:border-[var(--border)] [&_td]:px-3 [&_td]:py-2 [&_td]:text-[var(--text-muted)] [&_td]:align-top
+              [&_tr:nth-child(even)]:bg-[rgba(255,255,255,0.02)]
+            ">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{explanation ?? ''}</ReactMarkdown>
             </div>
           )}
         </div>
