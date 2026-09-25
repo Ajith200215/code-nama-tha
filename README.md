@@ -1,4 +1,4 @@
-# CodeArena - Guided Learning Coding Platform
+# code-nama-tha (CodeArena)
 
 CodeArena is a guided-learning coding platform with 4-level AI assistance, AI code reviews, custom multiplayer rooms, and an AI code explainer. Built with Next.js 15, Tailwind CSS, Supabase, Monaco Editor, Judge0, and Groq.
 
